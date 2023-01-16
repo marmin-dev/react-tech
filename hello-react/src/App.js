@@ -1,14 +1,7 @@
-import "./App.css";
-function App() {
-  const name = "리액트";
+import Say from "./Say";
 
-  return (
-    <>
-      {/* 이게 주석이다 */}
-      <div className="react">{name}</div>
-      //이런주석이나 /*이런주석은 보여용*/
-    </>
-  );
-}
+const App = () => {
+  return <Say />;
+};
 
 export default App;
