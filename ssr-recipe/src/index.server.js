@@ -4,12 +4,17 @@ import { StaticRouter } from "react-router-dom/server";
 import App from "./App";
 import path from "path";
 import fs from "fs";
+import PreloadContext from "./lib/PreloadContext";
+import rootReducer from "./modules";
+import { createStore, applyMiddleware } from "redux";
+import { Provider } from "react-redux";
+import thunk from "redux-thunk";
 
 //asset-manifest.json에서 파일 경로들을 조회한다
 const manifest = JSON.parse(
   fs.readFileSync(path.resolve("./build/asset-manifest.json"), "utf-8")
 );
-function createPage(root) {
+function createPage(root, stateScript) {
   return `<!DOCTYPE html>
   <html lang="en">
     <head>
@@ -26,6 +31,7 @@ function createPage(root) {
     <body>
       <noscript>You need to enable JavaScript to run this app.</noscript>
       <div id="root">${root}</div>
+      ${stateScript}
       <script src="${manifest.files["main.js"]}"></script>
     </body>
   </html>
@@ -33,16 +39,36 @@ function createPage(root) {
 }
 const app = express();
 //서버사이드 렌더링을 처리할 핸들러 함수이다
-const serverRender = (req, res, next) => {
+const serverRender = async (req, res, next) => {
   //이 함수는 404가 떠야 하는 상황에 404를 띄우지 않고 서버사이드 렌더링을 해준다
   const context = {};
+  const store = createStore(rootReducer, applyMiddleware(thunk));
+  const preloadContext = {
+    done: false,
+    promises: [],
+  };
   const jsx = (
-    <StaticRouter location={req.url} context={context}>
-      <App />
-    </StaticRouter>
+    <PreloadContext.Provider value={preloadContext}>
+      <Provider store={store}>
+        <StaticRouter location={req.url} context={context}>
+          <App />
+        </StaticRouter>
+      </Provider>
+    </PreloadContext.Provider>
   );
+
+  ReactDOMServer.renderToStaticMarkup(jsx);
+
+  try {
+    await Promise.all(preloadContext.promises);
+  } catch (e) {
+    return res.status(500);
+  }
+  preloadContext.done = true;
   const root = ReactDOMServer.renderToString(jsx); //렌더링을 하고
-  res.send(createPage(root));
+  const stateString = JSON.stringify(store.getState()).replace(/</g, "\\u003c");
+  const stateScript = `<script>__PRELOADED_STATE__=${stateString}</script>`; //리덕스
+  res.send(createPage(root, stateScript));
 };
 const serve = express.static(path.resolve("./build"), {
   index: false, // "/" 경로에서 index.html을 보여 주지 않도록 설정
