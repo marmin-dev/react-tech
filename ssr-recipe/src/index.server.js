@@ -85,14 +85,21 @@ const serverRender = async (req, res, next) => {
   const root = ReactDOMServer.renderToString(jsx); //렌더링을 하고
   const stateString = JSON.stringify(store.getState()).replace(/</g, "\\u003c");
   const stateScript = `<script>__PRELOADED_STATE__=${stateString}</script>`; //리덕스
-  res.send(createPage(root, stateScript));
+
+  const tags = {
+    scripts: stateScript + extractor.getScriptTags(),
+    links: extractor.getLinkTags(),
+    styles: extractor.getStyleTags(),
+  };
+  res.send(createPage(root, tags));
 };
-const serve = express.static(path.resolve("./build"), {
-  index: false, // "/" 경로에서 index.html을 보여 주지 않도록 설정
-});
-app.use(serve);
-app.use(serverRender);
-//8000번 포트로 서버를 가동한다
-app.listen(8000, () => {
-  console.log("Running on http://localhost:8000");
-});
+
+// const serve = express.static(path.resolve("./build"), {
+//   index: false, // "/" 경로에서 index.html을 보여 주지 않도록 설정
+// });
+// app.use(serve);
+// app.use(serverRender);
+// //8000번 포트로 서버를 가동한다
+// app.listen(8000, () => {
+//   console.log("Running on http://localhost:8000");
+// });
