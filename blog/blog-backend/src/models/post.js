@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-const { schema } = mongoose;
-const PostSchema = new schema({
+const { Schema } = mongoose;
+const PostSchema = new Schema({
   title: String,
   body: String,
   tags: [String], //문자열로 이루어진 배열
