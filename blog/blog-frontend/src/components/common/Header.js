@@ -2,7 +2,6 @@ import styled from 'styled-components';
 import Button from './Button';
 import Responsive from './Responsive';
 import { Link } from 'react-router-dom';
-import { onLogout } from '../../modules/user';
 
 const HeaderBlock = styled.div`
   position: fixed;
