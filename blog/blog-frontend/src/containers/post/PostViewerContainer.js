@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import PostActionsButtons from '../../components/post/PostActionsButtons';
 import PostViewer from '../../components/post/PostViewer';
 import { readPost, unloadPost } from '../../modules/post';
-import user from '../../modules/user';
+import { removePost } from '../../lib/api/posts';
 import { setOriginalPost } from '../../modules/write';
 
 const PostViewerContainer = ({ match }) => {
@@ -32,13 +32,23 @@ const PostViewerContainer = ({ match }) => {
     dispatch(setOriginalPost(post));
     navigate('/write');
   };
+  const onRemove = async () => {
+    try {
+      await removePost(postId);
+      navigate('/');
+    } catch (e) {
+      console.log(e);
+    }
+  };
   const ownPost = (user && user._id) === (post && post.user._id);
   return (
     <PostViewer
       post={post}
       loading={loading}
       error={error}
-      actionButtons={ownPost && <PostActionsButtons onEdit={onEdit} />}
+      actionButtons={
+        ownPost && <PostActionsButtons onEdit={onEdit} onRemove={onRemove} />
+      }
     />
   );
 };
